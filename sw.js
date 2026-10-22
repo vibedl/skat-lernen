@@ -1,6 +1,6 @@
 // Offline-Unterstützung: alle App-Dateien werden beim ersten Besuch gespeichert.
 // Bei jeder Änderung an Dateien VERSION erhöhen, damit Geräte die neue Fassung laden.
-const VERSION = "skat-lernen-v4";
+const VERSION = "skat-lernen-v5";
 const DATEIEN = [
   "./", "index.html", "style.css", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png",
   "js/app.js", "js/ui.js", "js/engine.js", "js/deck.js", "js/skatregeln.js", "js/skatki.js",

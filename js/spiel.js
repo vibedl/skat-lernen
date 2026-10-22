@@ -71,6 +71,23 @@ export function rechnungZeilen(e, spiel) {
   return z;
 }
 
+/**
+ * Reicht das gewählte Spiel für den Reizwert? Gibt null zurück (reicht sicher) oder einen Warntext,
+ * der genau sagt, was noch nötig wäre – Ansagen (Schneider/Schwarz) sind im sicheren Wert schon enthalten.
+ */
+export function ueberreizHinweis(spiel, kartenMitSkat, wert) {
+  if (spiel.art === "null") return nullWert(spiel) >= wert ? null : `Null ist ${nullWert(spiel)} wert, gereizt sind ${wert}. Das reicht nicht – du wärst überreizt und hättest verloren.`;
+  const spz = spitzen(kartenMitSkat, spiel).anzahl;
+  const sicher = spielwert(spiel, { spitzenAnzahl: spz }).wert;
+  if (sicher >= wert) return null;
+  const mitSchneider = spielwert(spiel, { spitzenAnzahl: spz, schneider: true }).wert;
+  const mitSchwarz = spielwert(spiel, { spitzenAnzahl: spz, schneider: true, schwarz: true }).wert;
+  const kopf = `Vorsicht: ${spielName(spiel, BLATT)} ist ${sicher} wert, gereizt sind ${wert}.`;
+  if (mitSchneider >= wert) return `${kopf} Das reicht nur, wenn du Schneider schaffst, also mindestens 90 Augen (dann ${mitSchneider}). Sonst bist du überreizt und hast verloren.`;
+  if (mitSchwarz >= wert) return `${kopf} ${spiel.schneiderAngesagt ? "Der Schneider ist bei deiner Ansage schon eingerechnet und bringt keine Stufe mehr. " : "Schneider allein reicht nicht. "}Es reicht nur, wenn du Schwarz spielst, also alle 10 Stiche machst (dann ${mitSchwarz}). Sonst bist du überreizt und hast verloren – auch mit 100 Augen.`;
+  return `${kopf} Das reicht nicht, auch mit Schneider oder Schwarz nicht. Du wärst überreizt, und ein überreiztes Spiel ist immer verloren.`;
+}
+
 export class SkatSpiel {
   /**
    * @param wurzel  Element, in das der Tisch gebaut wird
@@ -395,11 +412,9 @@ export class SkatSpiel {
         if (!o) return false;
         spiel = neuesSpielObjekt(spiel.art, { ...spiel, schneiderAngesagt: o === "schneider", schwarzAngesagt: o === "schwarz", ouvert: o === "ouvert" });
       }
-      const sicher = spiel.art === "null" ? nullWert(spiel) : spielwert(spiel, { spitzenAnzahl: spitzen(kartenMitSkat, spiel).anzahl }).wert;
-      const maximal = spiel.art === "null" ? sicher : spielwert(spiel, { spitzenAnzahl: spitzen(kartenMitSkat, spiel).anzahl, schneider: true, schwarz: true }).wert;
-      if (sicher < wert) {
-        const zusatz = maximal >= wert ? "Das reicht nur, wenn du Schneider (90 Augen) oder Schwarz (alle Stiche) schaffst – sonst bist du überreizt und hast verloren, auch mit 80 Augen." : "Das reicht nicht – du wärst überreizt. Ein überreiztes Spiel ist immer verloren, egal wie viele Augen du machst.";
-        const w = await this.frage(`Vorsicht: ${spielName(spiel, BLATT)} ist ${sicher} wert, gereizt sind ${wert}. ${zusatz}`, [{ id: "anders", text: "Anderes Spiel wählen", primaer: true }, { id: "trotzdem", text: "Trotzdem spielen" }]);
+      const warnung = ueberreizHinweis(spiel, kartenMitSkat, wert);
+      if (warnung) {
+        const w = await this.frage(warnung, [{ id: "anders", text: "Anderes Spiel oder andere Ansage wählen", primaer: true, voll: true }, { id: "trotzdem", text: "Trotzdem spielen (riskant)", voll: true }]);
         if (!w) return false;
         if (w === "anders") continue;
       }
@@ -673,7 +688,7 @@ export class SkatSpiel {
         let warum;
         if (e.ueberreizt) {
           const sp2 = e.spitzen;
-          warum = `${W} ${hattest} ${e.augenAllein} Augen – das würde reichen. <b>Aber ${du} ${hast} bis ${sp.reizwert} gereizt</b>, und ${dein} Spiel ist nur <b>${e.grund * e.stufen}</b> wert (${sp2.mit ? "mit" : "ohne"} ${sp2.anzahl}, Spiel ${sp2.anzahl + 1}${e.stufen > sp2.anzahl + 1 ? `, dazu ${e.stufen - sp2.anzahl - 1} Stufe${e.stufen - sp2.anzahl - 1 > 1 ? "n" : ""} für Hand/Schneider` : ""} = ${e.stufen} × ${e.grund}). Mehr reizen, als das Spiel wert ist, heißt <b>überreizt</b> – und überreizt ist immer verloren, egal wie viele Augen. Es zählt dann das nächste Vielfache von ${e.grund} über dem Reizwert: ${e.wert}, doppelt als Minus.`;
+          warum = `${W} ${hattest} ${e.augenAllein} Augen – das würde reichen. <b>Aber ${du} ${hast} bis ${sp.reizwert} gereizt</b>, und ${dein} Spiel ist nur <b>${e.grund * e.stufen}</b> wert (${sp2.mit ? "mit" : "ohne"} ${sp2.anzahl}, Spiel ${sp2.anzahl + 1}${e.stufen > sp2.anzahl + 1 ? `, dazu ${e.stufen - sp2.anzahl - 1} Stufe${e.stufen - sp2.anzahl - 1 > 1 ? "n" : ""} für Hand/Schneider` : ""} = ${e.stufen} × ${e.grund}). Mehr reizen, als das Spiel wert ist, heißt <b>überreizt</b> – und überreizt ist immer verloren, egal wie viele Augen.${sp.spiel.schneiderAngesagt && e.schneider ? ` ${ich ? "Dein" : "Sein"} Schneider (${e.augenAllein} Augen) war durch die Ansage schon eingerechnet und bringt keine zusätzliche Stufe – nur Schwarz (alle 10 Stiche) hätte noch eine gebracht.` : ""} Es zählt dann das nächste Vielfache von ${e.grund} über dem Reizwert: ${e.wert}, doppelt als Minus.`;
         } else if (sp.spiel.schwarzAngesagt) {
           warum = `${W} ${hattest} ${e.augenAllein} Augen – das würde reichen. <b>Aber ${du} ${hast} ${sp.spiel.ouvert ? "Ouvert gespielt, und Ouvert zählt automatisch als Schwarz angesagt" : "Schwarz angesagt"}:</b> ${ich ? "du hättest" : "er hätte"} <b>alle 10 Stiche</b> machen müssen, es waren aber nur ${e.sticheAllein}. Eine Ansage, die nicht klappt, verliert das Spiel.`;
         } else if (sp.spiel.schneiderAngesagt) {
