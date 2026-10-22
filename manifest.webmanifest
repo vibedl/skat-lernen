@@ -1,0 +1,17 @@
+{
+  "name": "Skat lernen",
+  "short_name": "Skat",
+  "description": "Skat lernen: Regeln, Übungen und Spielen gegen zwei Computer mit Erklärungen.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14201a",
+  "theme_color": "#14201a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
