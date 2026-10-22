@@ -387,16 +387,18 @@ export class SkatSpiel {
         if (!o) return false;
         if (o === "ja") spiel = neuesSpielObjekt("null", { hand, ouvert: true });
       } else if (hand) {
-        const o = await this.frage("Möchtest du etwas ansagen? (Jede Ansage: eine Stufe mehr – aber du musst sie auch schaffen.)", [
-          { id: "nichts", text: "Nichts ansagen", primaer: true, voll: true }, { id: "schneider", text: "Schneider" },
-          { id: "schwarz", text: "Schwarz" }, { id: "ouvert", text: "Ouvert (offen)", voll: true }]);
+        const o = await this.frage("Möchtest du etwas ansagen? Jede Ansage bringt eine Stufe mehr – aber wenn du sie nicht schaffst, ist das Spiel verloren, egal wie viele Augen du hast.", [
+          { id: "nichts", text: "Nichts ansagen (61 Augen reichen)", primaer: true, voll: true }, { id: "schneider", text: "Schneider ansagen: ich schaffe 90 Augen" },
+          { id: "schwarz", text: "Schwarz ansagen: ich mache alle 10 Stiche" }, { id: "ouvert", text: "Ouvert: offen spielen – zählt als Schwarz angesagt", voll: true }],
+          { hilfe: this.wenig ? "<b>Für Anfänger: Nichts ansagen.</b> Schneider angesagt heißt: unter 90 Augen verloren. Schwarz angesagt (und Ouvert) heißt: ein einziger Stich der Gegner, und du hast verloren – auch mit 100 Augen." : null });
+        this.hilfe();
         if (!o) return false;
         spiel = neuesSpielObjekt(spiel.art, { ...spiel, schneiderAngesagt: o === "schneider", schwarzAngesagt: o === "schwarz", ouvert: o === "ouvert" });
       }
       const sicher = spiel.art === "null" ? nullWert(spiel) : spielwert(spiel, { spitzenAnzahl: spitzen(kartenMitSkat, spiel).anzahl }).wert;
       const maximal = spiel.art === "null" ? sicher : spielwert(spiel, { spitzenAnzahl: spitzen(kartenMitSkat, spiel).anzahl, schneider: true, schwarz: true }).wert;
       if (sicher < wert) {
-        const zusatz = maximal >= wert ? "Das reicht nur, wenn du Schneider oder Schwarz schaffst." : "Das reicht nicht – du wärst überreizt und verlierst sicher.";
+        const zusatz = maximal >= wert ? "Das reicht nur, wenn du Schneider (90 Augen) oder Schwarz (alle Stiche) schaffst – sonst bist du überreizt und hast verloren, auch mit 80 Augen." : "Das reicht nicht – du wärst überreizt. Ein überreiztes Spiel ist immer verloren, egal wie viele Augen du machst.";
         const w = await this.frage(`Vorsicht: ${spielName(spiel, BLATT)} ist ${sicher} wert, gereizt sind ${wert}. ${zusatz}`, [{ id: "anders", text: "Anderes Spiel wählen", primaer: true }, { id: "trotzdem", text: "Trotzdem spielen" }]);
         if (!w) return false;
         if (w === "anders") continue;
@@ -648,7 +650,7 @@ export class SkatSpiel {
       const wer = a === 0 ? "Du" : NAMEN[a];
       const verb = e.gewonnen ? (a === 0 ? "gewinnst" : "gewinnt") : (a === 0 ? "verlierst" : "verliert");
       const detail = sp.spiel.art === "null" ? (e.gewonnen ? "ohne einen Stich" : `– ${e.sticheAllein ? "ein Stich war zu viel" : ""}`) : `mit ${e.augenAllein} Augen`;
-      const titel = `${wer} ${verb} ${spielName(sp.spiel, BLATT)} ${detail}`.replace(/\s+/g, " ").trim();
+      const titel = `${wer} ${verb} ${spielName(sp.spiel, BLATT)}${sp.spiel.ouvert && sp.spiel.art !== "null" ? " (= Schwarz angesagt)" : ""} ${detail}`.replace(/\s+/g, " ").trim();
       box.append(h("h2", { text: titel }));
       const marken = [];
       if (e.ueberreizt) marken.push("Überreizt!");
@@ -664,10 +666,26 @@ export class SkatSpiel {
       r.append(h("span.summe", { text: e.gewonnen ? "Gewonnen: Spielwert" : "Verloren: Spielwert × 2" }), h("span.summe.rechts", { text: `${e.gewonnen ? "+" : "−"}${e.gewonnen ? e.wert : 2 * e.wert}` }));
       if (sp.kontra) r.append(h("span", { text: sp.re ? "Kontra und Re: × 4" : "Kontra: × 2" }), h("span.rechts", { text: String(e.listenwert) }));
       box.append(r);
+      // Warum verloren, obwohl die Augen reichen? Das muss jeder verstehen.
+      if (!e.gewonnen && sp.spiel.art !== "null" && e.augenAllein >= 61) {
+        const ich = a === 0;
+        const W = ich ? "Du" : NAMEN[a], hattest = ich ? "hattest" : "hatte", hast = ich ? "hast" : "hat", dein = ich ? "dein" : (a === 1 ? "ihr" : "sein"), du = ich ? "du" : NAMEN[a];
+        let warum;
+        if (e.ueberreizt) {
+          const sp2 = e.spitzen;
+          warum = `${W} ${hattest} ${e.augenAllein} Augen – das würde reichen. <b>Aber ${du} ${hast} bis ${sp.reizwert} gereizt</b>, und ${dein} Spiel ist nur <b>${e.grund * e.stufen}</b> wert (${sp2.mit ? "mit" : "ohne"} ${sp2.anzahl}, Spiel ${sp2.anzahl + 1}${e.stufen > sp2.anzahl + 1 ? `, dazu ${e.stufen - sp2.anzahl - 1} Stufe${e.stufen - sp2.anzahl - 1 > 1 ? "n" : ""} für Hand/Schneider` : ""} = ${e.stufen} × ${e.grund}). Mehr reizen, als das Spiel wert ist, heißt <b>überreizt</b> – und überreizt ist immer verloren, egal wie viele Augen. Es zählt dann das nächste Vielfache von ${e.grund} über dem Reizwert: ${e.wert}, doppelt als Minus.`;
+        } else if (sp.spiel.schwarzAngesagt) {
+          warum = `${W} ${hattest} ${e.augenAllein} Augen – das würde reichen. <b>Aber ${du} ${hast} ${sp.spiel.ouvert ? "Ouvert gespielt, und Ouvert zählt automatisch als Schwarz angesagt" : "Schwarz angesagt"}:</b> ${ich ? "du hättest" : "er hätte"} <b>alle 10 Stiche</b> machen müssen, es waren aber nur ${e.sticheAllein}. Eine Ansage, die nicht klappt, verliert das Spiel.`;
+        } else if (sp.spiel.schneiderAngesagt) {
+          warum = `${W} ${hattest} ${e.augenAllein} Augen. <b>Aber ${du} ${hast} Schneider angesagt</b> – dafür braucht man mindestens <b>90 Augen</b>. Eine Ansage, die nicht klappt, verliert das Spiel.`;
+        }
+        if (warum) box.append(h("div.lernhilfe.warum", { html: `<b>Warum verloren?</b><br>${warum}` }));
+      }
       if (this.wenig) {
         let lehre = "";
         if (a === 0) {
-          if (e.ueberreizt) lehre = "Du hast mehr gereizt, als dein Spiel wert war. Zähle vor dem Reizen die Spitzen und rechne: Grundwert × (Spitzen + 1).";
+          if (e.ueberreizt) lehre = "Lehre: Zähle vor dem Reizen die Spitzen und rechne Grundwert × (Spitzen + 1). Nur bis zu diesem Wert reizen – Schneider nie einplanen.";
+          else if (sp.spiel.schwarzAngesagt || sp.spiel.schneiderAngesagt) lehre = "Lehre: Ansagen (Schneider, Schwarz, Ouvert) nur mit einem Blatt, das wirklich nichts abgibt. Für den Anfang: nichts ansagen.";
           else if (!e.gewonnen && e.augenAllein >= 50) lehre = "Knapp verloren. Prüfe: Hättest du anders drücken können, damit mehr Augen bei dir landen?";
           else if (!e.gewonnen) lehre = "Das Blatt war wohl zu schwach für ein Alleinspiel. Passen kostet nichts – ein verlorenes Spiel kostet doppelt.";
           else if (e.schneider) lehre = "Stark – Schneider bringt eine Stufe extra.";

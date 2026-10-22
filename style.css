@@ -245,6 +245,7 @@ button.karte { cursor: pointer; }
 .abrechnung .ergebnis.gewonnen { color: #9fe3a1; } .abrechnung .ergebnis.verloren { color: #ff9f8c; }
 .abrechnung .hinweis { font-family: var(--text); font-size: .85rem; }
 .abrechnung .lernhilfe { font-family: var(--text); font-size: .92rem; margin-top: 10px; }
+.abrechnung .lernhilfe.warum { border-left-color: var(--rot); background: #fde9dc; }
 .rechnung { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin-top: 8px; font-variant-numeric: tabular-nums; }
 .rechnung .summe { border-top: 2px dashed rgba(243,238,226,.5); padding-top: 6px; font-weight: 700; color: var(--messing); }
 .rechnung .rechts { text-align: right; }

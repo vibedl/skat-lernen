@@ -8,7 +8,7 @@ Lern-App für Skat: Regeln Schritt für Schritt, Übungen und Spielen gegen zwei
   `python3 -m http.server 8921 --directory projects/skat-lernen` → http://127.0.0.1:8921 (in `.claude/launch.json` als `skat-lernen` eingetragen; dort wird aus einem Spiegel im Scratchpad serviert, weil der Vorschau-Prozess die externe Platte nicht lesen darf).
 
 ## Bereiche
-1. **Lernen** – acht Kapitel: Karten und Augen · Tisch und Rollen · Spielarten und Trumpf · Bedienen und Stechen · Reizen (Spitzen, Grundwerte, Stufen) · Gewinnen und Abrechnen · Taktik-Tipps · Wörterbuch. Mit Mitmach-Beispielen (Augen tippen, Stichgewinner finden, Bedienen, Spitzen-Rechner).
+1. **Lernen** – acht Kapitel: Karten und Augen · **Was ist Trumpf? Die drei Spielarten** (ausführlich und ganz einfach: Chef-Farbe, Buben wandern zum Trumpf, Farbspiel/Grand/Null Schritt für Schritt, „Tippe alle Trümpfe an“, Abschlusstest) · Tisch und Rollen · Bedienen und Stechen · Reizen (Spitzen, Grundwerte, Stufen) · Gewinnen und Abrechnen · Taktik-Tipps · Wörterbuch. Mit Mitmach-Beispielen (Augen tippen, Stichgewinner finden, Bedienen, Spitzen-Rechner).
 2. **Üben** – Quiz à 10 Aufgaben je Thema (Augen, Trumpf, Stich, Bedienen, Spitzen, Reizwert, Spielwert, gemischt) mit Erklärung bei jeder Antwort; Bestleistung wird gespeichert.
 3. **Spielen** – echtes Skat nach Skatordnung: Reizen, Skat aufnehmen oder Hand, Drücken, Farbe/Grand/Null (auch ouvert, Schneider/Schwarz ansagen), Bedienpflicht, Überreizen, Abrechnung mit Stufen-Rechnung. Lernhilfe (voll/wenig/keine): Rollen erklären, Reiz-Empfehlung, Spielwahl-Tabelle, erlaubte Karten markieren, Tipp mit Begründung, Zug zurück, Stich-Erklärung, Lehre nach dem Spiel. Gegnerstärke leicht/mittel/Profi (Profi rechnet per Monte-Carlo). Hausregeln Ramsch und Kontra/Re zuschaltbar.
 4. **Erfolge** – Rang (Kiebitz → Anfänger → Skatfreund → Vereinsspieler → Skatmeister → Altmeister, über Erfahrungspunkte aus Kapiteln, Übungen und Spielen), zwölf Abzeichen (erster Sieg, Schneider, Grand, Null, Hand, Verteidiger, 10/10, Lauf, alles gelesen, Stammgast, „Der Alte“), Punkteliste als Kreidetafel mit Bilanz.
@@ -41,4 +41,4 @@ Legt beim ersten Mal das öffentliche Repo `vibedl/skat-lernen` an, schaltet Git
 - Im Browser (375 px): Kapitel, Spieltisch (Reizen, Drücken, Spiel, Abrechnung) per Auto-Durchlauf, Übungen.
 
 ## Stand
-22.10.2026: v2 (neue Optik, Belohnungen) veröffentlicht; davor v1 gebaut, lokal geprüft und veröffentlicht: öffentliches Repo https://github.com/vibedl/skat-lernen, App unter https://vibedl.github.io/skat-lernen/ (Pages aus `main`, Wurzel).
+22.10.2026: v3 – Kapitel „Spielarten“ neu geschrieben (Nutzer: „für dumme Menschen erklärt“, an zweiter Stelle) und veröffentlicht; davor v2 (neue Optik, Belohnungen) veröffentlicht; davor v1 gebaut, lokal geprüft und veröffentlicht: öffentliches Repo https://github.com/vibedl/skat-lernen, App unter https://vibedl.github.io/skat-lernen/ (Pages aus `main`, Wurzel).
