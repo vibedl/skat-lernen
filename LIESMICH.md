@@ -11,7 +11,9 @@ Lern-App für Skat: Regeln Schritt für Schritt, Übungen und Spielen gegen zwei
 1. **Lernen** – acht Kapitel: Karten und Augen · Tisch und Rollen · Spielarten und Trumpf · Bedienen und Stechen · Reizen (Spitzen, Grundwerte, Stufen) · Gewinnen und Abrechnen · Taktik-Tipps · Wörterbuch. Mit Mitmach-Beispielen (Augen tippen, Stichgewinner finden, Bedienen, Spitzen-Rechner).
 2. **Üben** – Quiz à 10 Aufgaben je Thema (Augen, Trumpf, Stich, Bedienen, Spitzen, Reizwert, Spielwert, gemischt) mit Erklärung bei jeder Antwort; Bestleistung wird gespeichert.
 3. **Spielen** – echtes Skat nach Skatordnung: Reizen, Skat aufnehmen oder Hand, Drücken, Farbe/Grand/Null (auch ouvert, Schneider/Schwarz ansagen), Bedienpflicht, Überreizen, Abrechnung mit Stufen-Rechnung. Lernhilfe (voll/wenig/keine): Rollen erklären, Reiz-Empfehlung, Spielwahl-Tabelle, erlaubte Karten markieren, Tipp mit Begründung, Zug zurück, Stich-Erklärung, Lehre nach dem Spiel. Gegnerstärke leicht/mittel/Profi (Profi rechnet per Monte-Carlo). Hausregeln Ramsch und Kontra/Re zuschaltbar.
-4. **Liste** – fortlaufende Punkteliste (gewonnen +Spielwert, verloren −2 × Spielwert) mit Bilanz; „Neue Liste beginnen“.
+4. **Erfolge** – Rang (Kiebitz → Anfänger → Skatfreund → Vereinsspieler → Skatmeister → Altmeister, über Erfahrungspunkte aus Kapiteln, Übungen und Spielen), zwölf Abzeichen (erster Sieg, Schneider, Grand, Null, Hand, Verteidiger, 10/10, Lauf, alles gelesen, Stammgast, „Der Alte“), Punkteliste als Kreidetafel mit Bilanz.
+
+**Optik und Spielgefühl (22.10.2026, zweite Fassung):** Skatabend in der Kneipe – grüner Filz mit Lichtkegel, Holzleiste, Messing-Knöpfe, Notizzettel für die Lernhilfe, Kreidetafel für Abrechnung und Liste; Schriften Fraunces/Nunito/Caveat (Google Fonts, mit Rückfall). Lena und Max als gezeichnete Gesichter (SVG in `js/spass.js`) mit Stimmung und Sprechblasen; Karten werden ausgeteilt, fliegen in den Stich und werden eingesammelt; Hand als Fächer; Konfetti bei Sieg und 10/10; Töne per WebAudio (abschaltbar).
 
 ## Aufbau
 ```
@@ -20,6 +22,7 @@ js/app.js                      Navigation, Üben-Quiz, Liste, Einstellungen, Ser
 js/spiel.js                    Spieltisch mit Lernhilfe (Klasse SkatSpiel)
 js/lernen.js                   Kapitel-Inhalte und Mitmach-Beispiele
 js/aufgaben.js                 Übungsaufgaben (ohne DOM)
+js/spass.js                    Töne, Konfetti, Ränge/Erfahrung, Abzeichen, Gesichter, Sprechblasen
 js/skatregeln.js, js/skatki.js Regeln und Computerspieler – übernommen aus projects/hirntraining (Kopf-Fit), unverändert
 js/engine.js, js/deck.js, js/ui.js  Karten, Zufall, DOM-Helfer
 manifest.webmanifest, sw.js, icon*.png  PWA (offline, Home-Bildschirm)
@@ -38,4 +41,4 @@ Legt beim ersten Mal das öffentliche Repo `vibedl/skat-lernen` an, schaltet Git
 - Im Browser (375 px): Kapitel, Spieltisch (Reizen, Drücken, Spiel, Abrechnung) per Auto-Durchlauf, Übungen.
 
 ## Stand
-22.10.2026: v1 gebaut, lokal geprüft und veröffentlicht: öffentliches Repo https://github.com/vibedl/skat-lernen, App unter https://vibedl.github.io/skat-lernen/ (Pages aus `main`, Wurzel).
+22.10.2026: v2 (neue Optik, Belohnungen) veröffentlicht; davor v1 gebaut, lokal geprüft und veröffentlicht: öffentliches Repo https://github.com/vibedl/skat-lernen, App unter https://vibedl.github.io/skat-lernen/ (Pages aus `main`, Wurzel).

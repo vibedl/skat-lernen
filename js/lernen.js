@@ -1,7 +1,7 @@
 // Lernkurs: Kapitel mit Text, Merksätzen, Beispielkarten und kleinen Mitmach-Beispielen.
 import { h } from "./ui.js";
 import { neuesDeck, karteElement, kartenName } from "./deck.js";
-import { augen, augenSumme, stichSieger, neuesSpielObjekt, legaleKarten, spitzen, spielwert, reizwerte, sortiereSkatHand } from "./skatregeln.js";
+import { augen, augenSumme, stichSieger, neuesSpielObjekt, legaleKarten, spitzen, spielwert, reizwerte, sortiereSkatHand, istTrumpf, farbNameSkat } from "./skatregeln.js";
 
 const DECK = neuesDeck("franzoesisch").sort((a, b) => (a.id < b.id ? -1 : 1));
 const K = (id) => DECK.find((k) => k.id === id);
@@ -94,6 +94,58 @@ function spitzenSpiel() {
   return wrap;
 }
 
+
+/** Mitmach-Beispiel: alle Trümpfe antippen. */
+function trumpfSpiel(spiel, ks) {
+  const trumpfe = new Set(ks.filter((k) => istTrumpf(k, spiel)).map((k) => k.id));
+  const getippt = new Set();
+  const info = h("p.hinweis", { text: `${trumpfe.size} Karten sind Trumpf. Gefunden: 0.` });
+  const el = h("div.kartenwahl.viele", {}, ks.map((kk) => {
+    const b = karteElement(kk, { tag: "button" });
+    b.type = "button";
+    b.onclick = () => {
+      if (getippt.has(kk.id)) return;
+      if (trumpfe.has(kk.id)) {
+        getippt.add(kk.id); b.classList.add("markiert");
+        const grund = kk.rang === 4 ? "ein Bube – immer Trumpf" : `${farbNameSkat(kk.farbe)} ist die Trumpffarbe`;
+        info.textContent = getippt.size === trumpfe.size ? `Alle ${trumpfe.size} gefunden – super! Die übrigen Karten sind normale Farbkarten.` : `Richtig: ${kartenName(kk)} (${grund}). Gefunden: ${getippt.size} von ${trumpfe.size}.`;
+      } else {
+        b.classList.add("blass"); setTimeout(() => b.classList.remove("blass"), 900);
+        info.textContent = `${kartenName(kk)} ist kein Trumpf – ${kk.rang === 4 ? "" : `${farbNameSkat(kk.farbe)} ist nicht die Trumpffarbe und es ist kein Bube`}.`.replace(" – .", ".");
+      }
+    };
+    return b;
+  }));
+  return h("div", {}, el, info);
+}
+
+/** Mini-Quiz: Ist die Karte Trumpf? Drei Fragen quer durch die Spielarten. */
+function trumpfQuiz() {
+  const fragen = [
+    { spiel: neuesSpielObjekt("farbe", { trumpf: "pik" }), karte: k("♥B"), text: "Pik-Spiel: Ist der Herz-Bube Trumpf?", erkl: "Buben sind im Farbspiel immer Trumpf, egal welche Farbe auf ihnen steht." },
+    { spiel: neuesSpielObjekt("grand"), karte: k("♣A"), text: "Grand: Ist das Kreuz-Ass Trumpf?", erkl: "Beim Grand sind nur die vier Buben Trumpf. Das Kreuz-Ass ist eine normale – aber hohe – Farbkarte." },
+    { spiel: neuesSpielObjekt("null"), karte: k("♠B"), text: "Null: Ist der Pik-Bube Trumpf?", erkl: "Im Null gibt es keinen Trumpf. Der Pik-Bube ist eine Pik-Karte und steht zwischen Dame und 10." },
+    { spiel: neuesSpielObjekt("farbe", { trumpf: "karo" }), karte: k("♦7"), text: "Karo-Spiel: Ist die Karo-7 Trumpf?", erkl: "Alle Karo-Karten sind Trumpf – auch die kleine 7. Sie schlägt jedes fremde Ass." },
+  ];
+  let i = 0, punkte = 0;
+  const wrap = h("div");
+  const zeige = () => {
+    if (i >= fragen.length) { wrap.replaceChildren(h("p", { text: `${punkte} von ${fragen.length} richtig. ${punkte === fragen.length ? "Du hast Trumpf verstanden!" : "Lies die Stellen oben noch einmal – dann klappt es."}` }), h("div.knopfreihe", {}, h("button.knopf", { type: "button", text: "Noch einmal", onclick: () => { i = 0; punkte = 0; zeige(); } }))); return; }
+    const f = fragen[i];
+    const info = h("p.hinweis");
+    const antwort = (ja) => {
+      const richtig = ja === istTrumpf(f.karte, f.spiel);
+      if (richtig) punkte++;
+      info.textContent = (richtig ? "Richtig! " : "Nicht ganz. ") + f.erkl;
+      knoepfe.replaceChildren(h("button.knopf.primaer", { type: "button", text: i + 1 < fragen.length ? "Nächste Frage" : "Ergebnis", onclick: () => { i++; zeige(); } }));
+    };
+    const knoepfe = h("div.knopfreihe", {}, h("button.knopf", { type: "button", text: "Ja, Trumpf", onclick: () => antwort(true) }), h("button.knopf", { type: "button", text: "Nein", onclick: () => antwort(false) }));
+    wrap.replaceChildren(h("p", {}, h("b", { text: `Frage ${i + 1} von ${fragen.length}: ` }), f.text), h("div.kartenreihe", {}, karteElement(f.karte)), knoepfe, info);
+  };
+  zeige();
+  return wrap;
+}
+
 const SPIEL_HERZ = neuesSpielObjekt("farbe", { trumpf: "herz" });
 const SPIEL_GRAND = neuesSpielObjekt("grand");
 const SPIEL_NULL = neuesSpielObjekt("null");
@@ -108,7 +160,43 @@ export const KAPITEL = [
         bauen: () => reihe(karten("♠A", "♠10", "♠K", "♠D", "♠B", "♠9", "♠8", "♠7"), { beschriftung: ["11", "10", "4", "3", "2", "0", "0", "0"] }) },
       { merke: "Ass 11 · Zehn 10 · König 4 · Dame 3 · Bube 2 · 9, 8, 7 nichts. Eine Farbe hat zusammen 30 Augen, alle vier 120." },
       { titel: "Probier es aus", bauen: augenSpiel },
-      { titel: "Die Zehn ist stärker als der König!", html: "Anders als bei vielen Kartenspielen liegt die <b>Zehn über dem König</b> (außer im Nullspiel). Die Reihenfolge innerhalb einer Farbe ist deshalb: <b>Ass, 10, König, Dame, 9, 8, 7</b> – und der Bube spielt eine Sonderrolle, dazu gleich mehr." },
+      { titel: "Die Zehn ist stärker als der König!", html: "Anders als bei vielen Kartenspielen liegt die <b>Zehn über dem König</b> (außer im Nullspiel). Die Reihenfolge innerhalb einer Farbe ist deshalb: <b>Ass, 10, König, Dame, 9, 8, 7</b> – und der Bube spielt eine Sonderrolle – das erklärt das nächste Kapitel ganz genau." },
+    ],
+  },
+  {
+    id: "spielarten", titel: "Was ist Trumpf? Die drei Spielarten", kurz: "Ganz langsam erklärt: Farbspiel, Grand und Null – und was die Buben damit zu tun haben.",
+    abschnitte: [
+      { titel: "Erst einmal: Was heißt „Trumpf“?", html: "Stell dir vor, eine Farbe ist die <b>Chef-Farbe</b>. Jede Karte dieser Farbe schlägt <b>jede</b> Karte einer anderen Farbe – egal wie klein sie ist. Eine Trumpf-Sieben schlägt ein fremdes Ass. Das ist Trumpf.<br><br>Welche Farbe Chef ist, bestimmt der <b>Alleinspieler</b> vor jedem Spiel neu. Er sagt es laut an („Ich spiele Herz“). Es gibt drei Möglichkeiten, die sogenannten <b>Spielarten</b>:",
+        bauen: () => h("div", { html: "<table><tr><th>Spielart</th><th>Was ist Trumpf?</th><th>Ziel</th></tr><tr><td><b>Farbspiel</b></td><td>eine Farbe + alle vier Buben</td><td>61 Augen</td></tr><tr><td><b>Grand</b></td><td>nur die vier Buben</td><td>61 Augen</td></tr><tr><td><b>Null</b></td><td>gar nichts</td><td>keinen einzigen Stich</td></tr></table>" }) },
+      { merke: "Trumpf sticht alles. Die kleinste Trumpfkarte ist stärker als das größte Ass einer anderen Farbe." },
+
+      { titel: "Spielart 1: Das Farbspiel – Schritt für Schritt", html: "<ol><li>Der Alleinspieler nennt <b>eine Farbe</b>, zum Beispiel <b>Herz</b>.</li><li>Jetzt sind <b>alle Herz-Karten Trumpf</b>: Herz-Ass, Herz-10, Herz-König, Herz-Dame, Herz-9, Herz-8, Herz-7.</li><li>Und – das ist der Trick beim Skat – <b>die vier Buben sind auch Trumpf</b>. Alle vier! Auch der Kreuz-Bube, der Pik-Bube und der Karo-Bube, obwohl auf ihnen gar kein Herz steht.</li><li>Die Buben sind sogar die <b>stärksten</b> Trümpfe, stärker als das Herz-Ass.</li></ol>Zusammen sind das <b>11 Trümpfe</b>. Hier die ganze Reihe, die stärkste Karte links:",
+        bauen: () => reihe(karten("♣B", "♠B", "♥B", "♦B", "♥A", "♥10", "♥K", "♥D", "♥9", "♥8", "♥7"), { klasse: "klein", beschriftung: ["1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10.", "11."] }) },
+      { titel: "Die Buben: immer in dieser Reihenfolge", html: "Egal welche Farbe Trumpf ist – die Buben stehen immer ganz oben, und zwar immer so: <b>Kreuz-Bube</b> (der stärkste, Skatspieler nennen ihn „den Alten“), dann <b>Pik-Bube</b>, dann <b>Herz-Bube</b>, dann <b>Karo-Bube</b>.<br>Merkhilfe: die Farben werden <b>von dunkel nach hell</b> gelesen – Kreuz ist dunkel, Karo ist hell.",
+        bauen: () => reihe(karten("♣B", "♠B", "♥B", "♦B"), { beschriftung: ["stärkster", "", "", "schwächster"] }) },
+      { titel: "Und die anderen drei Farben?", html: "Im Herz-Spiel sind Kreuz, Pik und Karo <b>keine</b> Trumpffarben. Sie sind „normale“ Farben. Innerhalb so einer Farbe gilt diese Reihenfolge (stärkste links): <b>Ass, 10, König, Dame, 9, 8, 7</b>. Achtung, die <b>10 liegt über dem König</b>! Und der Bube fehlt in der Reihe, weil er ja zum Trumpf ausgewandert ist – eine normale Farbe hat im Farbspiel also nur <b>7 Karten</b>.",
+        bauen: () => reihe(karten("♠A", "♠10", "♠K", "♠D", "♠9", "♠8", "♠7"), { klasse: "klein" }) },
+      { titel: "Probier es: Tippe alle Trümpfe an", html: "Gespielt wird <b>Herz</b>. Welche dieser Karten sind Trumpf? Tippe sie alle an.", bauen: () => trumpfSpiel(SPIEL_HERZ, karten("♥7", "♠A", "♣B", "♦10", "♥K", "♦B", "♣A", "♥10")) },
+      { titel: "Noch einmal mit einer anderen Farbe", html: "Jetzt wird <b>Karo</b> gespielt. Tippe wieder alle Trümpfe an.", bauen: () => trumpfSpiel(neuesSpielObjekt("farbe", { trumpf: "karo" }), karten("♥A", "♦7", "♥B", "♠10", "♦D", "♣7", "♠B", "♦A")) },
+      { titel: "Was ist ein Farbspiel wert?", html: "Jede Farbe hat einen festen <b>Grundwert</b>: <b>Karo 9 · Herz 10 · Pik 11 · Kreuz 12</b>. Kreuz ist also das „teuerste“ Farbspiel. Der Grundwert wird später mit den Stufen malgenommen (Kapitel 5). Für den Anfang reicht: Kreuz bringt am meisten, Karo am wenigsten." },
+      { titel: "Wann spiele ich ein Farbspiel?", html: "Wenn du von einer Farbe <b>viele Karten</b> hast und dazu ein paar Buben. Faustregel: Buben plus Karten dieser Farbe sollten zusammen <b>mindestens 6</b> sein, besser 7. Dann hast du mehr Trümpfe als die beiden Gegner zusammen." },
+      { merke: "Farbspiel = eine Farbe ist Trumpf, plus alle vier Buben obendrauf. 11 Trümpfe, stärkster ist der Kreuz-Bube." },
+
+      { titel: "Spielart 2: Der Grand", html: "„Grand“ heißt „groß“. Beim Grand gibt es <b>keine Trumpffarbe</b>. Trumpf sind <b>nur die vier Buben</b> – sonst nichts. Das sind also nur <b>4 Trümpfe</b>, in der gewohnten Reihenfolge Kreuz, Pik, Herz, Karo.<br><br>Alle vier Farben sind „normale“ Farben mit je 7 Karten: Ass, 10, König, Dame, 9, 8, 7.",
+        bauen: () => h("div", {}, reihe(karten("♣B", "♠B", "♥B", "♦B"), { beschriftung: ["Trumpf 1", "Trumpf 2", "Trumpf 3", "Trumpf 4"] }), h("p.hinweis", { text: "Mehr Trümpfe gibt es beim Grand nicht. Alle anderen Karten sind normale Farbkarten." })) },
+      { titel: "Beispiel-Stich im Grand", bauen: () => stichSpiel(SPIEL_GRAND, karten("♥10", "♥A", "♦B"), "Der Karo-Bube ist beim Grand Trumpf und sticht das Herz-Ass. Lägen nur Herz-Karten im Stich, würde das Ass gewinnen – vor der 10.") },
+      { titel: "Wann spiele ich Grand?", html: "Wenn du <b>mehrere Buben</b> hast (am besten die zwei höchsten) <b>und</b> Asse in verschiedenen Farben, möglichst mit der 10 dazu. Dann holst du mit den Buben die Trümpfe der Gegner und mit den Assen die Augen. Der Grand hat den höchsten Grundwert: <b>24</b> – mehr als doppelt so viel wie Kreuz." },
+      { merke: "Grand = nur die vier Buben sind Trumpf. Grundwert 24. Nur mit guten Buben und Assen spielen." },
+
+      { titel: "Spielart 3: Der Null – alles andersrum", html: "Der Null ist ein <b>völlig anderes Spiel</b>. Hier will der Alleinspieler <b>keinen einzigen Stich</b> bekommen. Null Stiche – daher der Name.<ul><li>Es gibt <b>keinen Trumpf</b>. Auch die Buben nicht! Ein Bube ist hier eine normale Karte seiner Farbe.</li><li>Die Reihenfolge ist anders, nämlich wie bei vielen anderen Kartenspielen: <b>Ass, König, Dame, Bube, 10, 9, 8, 7</b>. Die 10 ist hier klein, der Bube steht unter der Dame.</li><li>Augen zählen nicht. Es zählt nur: Bekommt der Alleinspieler einen Stich – oder nicht?</li><li>Sobald der Alleinspieler einen Stich bekommt, ist das Spiel <b>sofort vorbei und verloren</b>.</li></ul>",
+        bauen: () => reihe(karten("♦A", "♦K", "♦D", "♦B", "♦10", "♦9", "♦8", "♦7"), { klasse: "klein", beschriftung: ["höchste", "", "", "", "", "", "", "kleinste"] }) },
+      { titel: "Beispiel-Stich im Null", bauen: () => stichSpiel(SPIEL_NULL, karten("♣10", "♣B", "♣7"), "Im Null gilt Ass, König, Dame, Bube, 10, 9, 8, 7. Der Bube steht über der 10, also gewinnt der Kreuz-Bube. Wer ihn gelegt hat, bekommt den Stich – als Alleinspieler wäre das schlecht.") },
+      { titel: "Wann spiele ich Null?", html: "Wenn du fast nur <b>kleine Karten</b> hast: Siebenen, Achten, Neunen. Gefährlich sind hohe Karten ohne kleine darunter – ein Ass oder eine 10 ohne eine 7 in derselben Farbe bekommt fast sicher einen Stich.<br>Der Null hat <b>feste Werte</b>: Null 23 · Null Hand 35 (ohne Skat) · Null ouvert 46 (offen, alle sehen deine Karten) · Null ouvert Hand 59." },
+      { merke: "Null = kein Trumpf, andere Reihenfolge (A K D B 10 9 8 7), und der Alleinspieler darf keinen Stich machen." },
+
+      { titel: "Alles auf einen Blick", bauen: () => h("div", { html: "<table><tr><th>Spielart</th><th>Trumpf</th><th>Wie viele?</th><th>Reihenfolge in einer Farbe</th><th>Grundwert</th><th>Ziel</th></tr><tr><td>Farbspiel</td><td>4 Buben + eine Farbe</td><td>11</td><td>A 10 K D 9 8 7</td><td>9 / 10 / 11 / 12</td><td>61 Augen</td></tr><tr><td>Grand</td><td>4 Buben</td><td>4</td><td>A 10 K D 9 8 7</td><td>24</td><td>61 Augen</td></tr><tr><td>Null</td><td>keiner</td><td>0</td><td>A K D B 10 9 8 7</td><td>23 / 35 / 46 / 59</td><td>kein Stich</td></tr></table>" }) },
+      { titel: "Letzter Test: Ist die Karte Trumpf?", bauen: trumpfQuiz },
+      { titel: "Und beim Spielen in dieser App?", html: "Du musst dir das nicht alles sofort merken. Beim Spielen steht unter dem Stich immer, was gerade gespielt wird („Max spielt Herz-Spiel“), die Lernhilfe sagt dir, was Trumpf ist, und deine Trümpfe liegen in der Hand ganz links." },
     ],
   },
   {
@@ -119,21 +207,6 @@ export const KAPITEL = [
       { titel: "Einer gegen zwei", html: "Durch das <b>Reizen</b> (Kapitel 5) wird bestimmt, wer <b>Alleinspieler</b> ist. Die beiden anderen sind die <b>Gegenspieler</b> und arbeiten zusammen – ihre Stiche und Augen werden zusammengezählt. Der Alleinspieler darf meist den Skat aufnehmen, zwei Karten <b>drücken</b> (weglegen) und bestimmt die Spielart." },
       { merke: "Alleinspieler: braucht 61 Augen. Gegenspieler: brauchen zusammen 60 Augen (dann hat der Alleinspieler nur 60 und verliert). Die gedrückten Karten zählen am Ende für den Alleinspieler." },
       { titel: "Ablauf eines Spiels", html: "<ol><li><b>Geben</b>: 3 – Skat (2) – 4 – 3 Karten.</li><li><b>Reizen</b>: Wer traut sich das höchste Spiel zu?</li><li><b>Skat aufnehmen</b> und zwei Karten drücken – oder <b>Hand</b> spielen (Skat bleibt liegen).</li><li><b>Spiel ansagen</b>: Farbe, Grand oder Null.</li><li><b>10 Stiche</b> spielen.</li><li><b>Abrechnen</b>: Augen zählen, Spielwert berechnen.</li></ol>" },
-    ],
-  },
-  {
-    id: "spielarten", titel: "Spielarten und Trumpf", kurz: "Farbspiel, Grand, Null – und warum die Buben besonders sind.",
-    abschnitte: [
-      { html: "Der Alleinspieler wählt, <b>was Trumpf ist</b>. Trumpfkarten stechen alle anderen Farben. Es gibt drei Arten von Spielen:" },
-      { titel: "1. Farbspiel", html: "Eine Farbe ist Trumpf, zum Beispiel Herz. <b>Alle vier Buben sind zusätzlich Trumpf</b> – und zwar die höchsten! Das Herzspiel hat deshalb <b>11 Trümpfe</b>, in dieser Reihenfolge (höchster zuerst):",
-        bauen: () => reihe(karten("♣B", "♠B", "♥B", "♦B", "♥A", "♥10", "♥K", "♥D", "♥9", "♥8", "♥7"), { klasse: "klein" }) },
-      { merke: "Buben-Reihenfolge: Kreuz > Pik > Herz > Karo. Merkhilfe: „Kreuz-Pik-Herz-Karo“ wird vom Dunklen zum Hellen gelesen – der Kreuz-Bube (der „Alte“) ist immer die höchste Karte im Spiel (außer beim Null)." },
-      { html: "Die Grundwerte der Farben: <b>Karo 9, Herz 10, Pik 11, Kreuz 12</b>. Sie bestimmen später den Spielwert." },
-      { titel: "2. Grand", html: "Im Grand sind <b>nur die vier Buben Trumpf</b>. Alle anderen Karten sind normale Farbkarten (Ass, 10, König, Dame, 9, 8, 7). Grundwert <b>24</b> – der Grand ist das wertvollste Spiel.",
-        bauen: () => reihe(karten("♣B", "♠B", "♥B", "♦B"), { beschriftung: ["höchster", "", "", "niedrigster"] }) },
-      { titel: "3. Null", html: "Beim Null will der Alleinspieler <b>keinen einzigen Stich</b> machen. Es gibt <b>keinen Trumpf</b>, und die Reihenfolge ist wie bei anderen Kartenspielen: <b>Ass, König, Dame, Bube, 10, 9, 8, 7</b>. Die Zehn ist hier also klein, der Bube ist nur eine Farbkarte. Feste Werte: Null 23, Null Hand 35, Null ouvert 46, Null ouvert Hand 59.",
-        bauen: () => reihe(karten("♦A", "♦K", "♦D", "♦B", "♦10", "♦9", "♦8", "♦7"), { klasse: "klein" }) },
-      { merke: "Farbspiel: Buben + Trumpffarbe sind Trumpf. Grand: nur Buben. Null: kein Trumpf, andere Reihenfolge, kein Stich erlaubt." },
     ],
   },
   {
