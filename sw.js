@@ -1,10 +1,10 @@
 // Offline-Unterstützung: alle App-Dateien werden beim ersten Besuch gespeichert.
 // Bei jeder Änderung an Dateien VERSION erhöhen, damit Geräte die neue Fassung laden.
-const VERSION = "skat-lernen-v1";
+const VERSION = "skat-lernen-v2";
 const DATEIEN = [
   "./", "index.html", "style.css", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png",
   "js/app.js", "js/ui.js", "js/engine.js", "js/deck.js", "js/skatregeln.js", "js/skatki.js",
-  "js/aufgaben.js", "js/lernen.js", "js/spiel.js",
+  "js/aufgaben.js", "js/lernen.js", "js/spiel.js", "js/spass.js",
 ];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(DATEIEN)).then(() => self.skipWaiting()));

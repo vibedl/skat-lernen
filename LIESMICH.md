@@ -3,7 +3,7 @@
 Lern-App für Skat: Regeln Schritt für Schritt, Übungen und Spielen gegen zwei Computer (Lena und Max) mit Lernhilfe, die jeden Zug erklärt. Läuft im Browser auf Handy und Rechner, ohne Server, ohne Konto, offline nach dem ersten Besuch.
 
 ## Benutzen
-- **Online (Handy):** `https://vibedl.github.io/skat-lernen/` – nach dem Veröffentlichen (siehe unten). Auf dem iPhone: Teilen → „Zum Home-Bildschirm“; Android: „App installieren“.
+- **Online (Handy):** https://vibedl.github.io/skat-lernen/ (seit 22.10.2026). Auf dem iPhone: Teilen → „Zum Home-Bildschirm“; Android: „App installieren“.
 - **Lokal:** Die Seite braucht einen kleinen Webserver (ES-Module laden nicht über `file://`):
   `python3 -m http.server 8921 --directory projects/skat-lernen` → http://127.0.0.1:8921 (in `.claude/launch.json` als `skat-lernen` eingetragen; dort wird aus einem Spiegel im Scratchpad serviert, weil der Vorschau-Prozess die externe Platte nicht lesen darf).
 
@@ -38,4 +38,4 @@ Legt beim ersten Mal das öffentliche Repo `vibedl/skat-lernen` an, schaltet Git
 - Im Browser (375 px): Kapitel, Spieltisch (Reizen, Drücken, Spiel, Abrechnung) per Auto-Durchlauf, Übungen.
 
 ## Stand
-22.10.2026: v1 gebaut, lokal geprüft, noch nicht veröffentlicht (kein Repo angelegt).
+22.10.2026: v1 gebaut, lokal geprüft und veröffentlicht: öffentliches Repo https://github.com/vibedl/skat-lernen, App unter https://vibedl.github.io/skat-lernen/ (Pages aus `main`, Wurzel).

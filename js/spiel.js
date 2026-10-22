@@ -8,6 +8,7 @@ import {
   spitzen, spielwert, nullWert, istBube, augenSumme, bedienFarbe, istTrumpf, schlaegt, stichSieger, kartenStaerke, augen,
 } from "./skatregeln.js";
 import { kiReizAntwort, kiHandSpiel, kiDrueckenUndAnsagen, kiKarte, kiKontra, kiRe, reizLimit, spielKandidaten } from "./skatki.js";
+import { klang, konfetti, gibXp, zaehle, zaehler, verleihe, gesicht, sprechblase, spruch } from "./spass.js";
 
 export const NAMEN = ["Du", "Lena", "Max"];
 const BLATT = "franzoesisch";
@@ -87,6 +88,7 @@ export class SkatSpiel {
     this.sp = null;
     this.undo = null;
     this.reizDran = null;
+    this.neueAbzeichen = [];
     this.bauen();
   }
 
@@ -102,9 +104,9 @@ export class SkatSpiel {
       const name = h("span.gname", { text: NAMEN[p] });
       const rolle = h("span.rolle");
       const info = h("span.ginfo");
-      const el = h(`div.gegner${p === 2 ? ".rechts" : ""}`, {}, h("div.faecher", {}, karteElement(null, { verdeckt: true }), karteElement(null, { verdeckt: true })),
-        h("div", {}, h("div", {}, name, rolle), info));
-      return { el, rolle, info };
+      const kopf = gesicht(NAMEN[p], "neutral");
+      const el = h(`div.gegner${p === 2 ? ".rechts" : ""}`, {}, kopf, h("div", {}, h("div", {}, name, rolle), info));
+      return { el, rolle, info, kopf, laune: "neutral" };
     });
     this.statusEl = h("p.status", { "aria-live": "polite" });
     this.augenEl = h("p.status.klein");
@@ -126,6 +128,12 @@ export class SkatSpiel {
   }
 
   status(text) { this.statusEl.textContent = text; }
+  /** Gesichtsausdruck eines Gegners ändern. */
+  laune(p, laune) {
+    const g = this.gegner[p - 1]; if (!g || g.laune === laune) return;
+    const neu = gesicht(NAMEN[p], laune); g.kopf.replaceWith(neu); g.kopf = neu; g.laune = laune;
+  }
+  sagt(p, text, opts) { if (p > 0) sprechblase(this.gegner[p - 1].el, text, opts); }
   hilfe(inhalt) {
     if (!inhalt) { this.hilfeEl.replaceChildren(); return; }
     if (typeof inhalt === "string") this.hilfeEl.innerHTML = inhalt;
@@ -171,7 +179,7 @@ export class SkatSpiel {
       const idx = spieler.indexOf(p);
       if (idx >= 0) {
         const el = karteElement(karten[idx]);
-        if (karten[idx].id === neuId) el.classList.add("neu");
+        if (karten[idx].id === neuId) el.classList.add("flieg");
         s.karte.replaceChildren(el);
       } else s.karte.replaceChildren(h("div.leer"));
       s.el.classList.toggle("amzug", this.sp.amZug === p && !this.sp.fertig);
@@ -219,15 +227,20 @@ export class SkatSpiel {
   /**
    * Eigene Hand zeichnen. opts: waehlbar, spielbar(k), gewaehltId, tippId, onTap(k)
    */
-  zeigeHand(hand, { waehlbar = false, spielbar = () => true, gewaehlt = new Set(), tippId = null, onTap = null, markiere = false } = {}) {
+  zeigeHand(hand, { waehlbar = false, spielbar = () => true, gewaehlt = new Set(), tippId = null, onTap = null, markiere = false, austeilen = false } = {}) {
     this.handEl.classList.toggle("waehlbar", waehlbar);
     this.handBereich.hidden = hand.length === 0;
-    this.handEl.replaceChildren(...hand.map((k) => {
+    const n = hand.length;
+    this.handEl.replaceChildren(...hand.map((k, i) => {
       const el = karteElement(k, { tag: onTap ? "button" : "div" });
       if (onTap) { el.type = "button"; el.onclick = debounced(() => onTap(k)); }
       if (waehlbar && markiere) el.classList.add(spielbar(k) ? "spielbar" : "unspielbar");
       if (gewaehlt.has(k.id)) el.classList.add("gewaehlt");
       if (tippId === k.id) el.classList.add("tipp");
+      const mitte = (n - 1) / 2, d = (i - mitte) * (n > 8 ? 2.2 : 3.2);
+      el.style.setProperty("--dreh", `${d}deg`);
+      el.style.setProperty("--heb", `${Math.abs(i - mitte) * 1.6}px`);
+      if (austeilen) { el.classList.add("austeilen"); el.style.setProperty("--verz", `${i * 0.07}s`); }
       return h("div.slot", {}, el);
     }));
   }
@@ -271,14 +284,19 @@ export class SkatSpiel {
         if (!a) return false;
         reizAntwort(sp.reizung, a === "ja");
         this.status(a === "ja" ? (f.art === "hoeren" ? "Du: „Ja.“" : `Du: „${f.wert}.“`) : "Du: „Passe.“");
+        if (a === "ja") klang.reiz();
         if (!(await this.pause(600))) return false;
       } else {
         this.status(`${NAMEN[f.spieler]} überlegt …`);
+        this.laune(f.spieler, "denkt");
         if (!(await this.pause(denkpause(Math.random, 700)))) return false;
         const ja = kiReizAntwort(sp, f.spieler, this.staerke(f.spieler));
         reizAntwort(sp.reizung, ja);
         const name = NAMEN[f.spieler];
         this.status(!ja ? `${name}: „Passe.“` : f.art === "hoeren" ? `${name}: „Ja.“` : f.art === "vorhand" ? `${name} spielt selbst für 18.` : `${name}: „${f.wert}.“`);
+        this.sagt(f.spieler, !ja ? spruch("passe") : f.art === "hoeren" ? spruch("ja") : f.art === "vorhand" ? "Ich spiel!" : `${f.wert}!`, { klasse: ja ? "laut" : "" });
+        if (ja) klang.reiz();
+        this.laune(f.spieler, ja ? "stolz" : "neutral");
         this.zeichne();
         if (!(await this.pause(1000))) return false;
       }
@@ -508,6 +526,7 @@ export class SkatSpiel {
     const r = spieleKarte(sp, p, karte);
     if (!r.ok) throw new Error("Skat: ungültiger Zug " + r.grund);
     this.zeigeHand(this.handAnzeige());
+    klang.karte();
     if (!r.stichFertig) {
       this.zeichne(karte.id);
       if (p !== 0) this.status(`${NAMEN[p]} spielt ${kartenName(karte)}.`);
@@ -519,9 +538,16 @@ export class SkatSpiel {
     this.slots.forEach((s, q) => s.el.classList.toggle("sieger", q === st.sieger));
     const au = augenSumme(st.karten);
     this.status(st.sieger === 0 ? `Du bekommst den Stich (${au} Augen).` : `${NAMEN[st.sieger]} bekommt den Stich (${au} Augen).`);
+    const meineSeite = istPartei(sp, 0, st.sieger);
+    klang.stich(meineSeite);
+    if (st.sieger > 0) { this.sagt(st.sieger, spruch(au >= 10 ? "stichGewonnen" : "ja")); this.laune(st.sieger, "froh"); }
+    [1, 2].forEach((q) => { if (q !== st.sieger && !istPartei(sp, q, st.sieger)) { this.laune(q, au >= 10 ? "sauer" : "neutral"); if (au >= 14 && Math.random() < 0.5) this.sagt(q, spruch("stichVerloren")); } });
     if (this.voll) this.hilfe(stichErklaerung(st, sp.spiel));
-    const ok = await this.pause(this.voll ? 2200 : 1500);
+    const ok = await this.pause(this.voll ? 2000 : 1300);
+    this.slots.forEach((s) => s.karte.querySelectorAll(".karte").forEach((k) => k.classList.add("einsammeln")));
+    await this.pause(420);
     this.slots.forEach((s) => s.el.classList.remove("sieger"));
+    [1, 2].forEach((q) => this.laune(q, "neutral"));
     this.hilfe();
     return ok;
   }
@@ -532,8 +558,10 @@ export class SkatSpiel {
     const sp = this.sp;
     this.undo = null;
     this.hilfe();
+    [1, 2].forEach((q) => this.laune(q, "neutral"));
     this.zeichne();
-    this.zeigeHand(this.handAnzeige());
+    this.zeigeHand(this.handAnzeige(), { austeilen: true });
+    if (sp.haende[0].filter(istBube).length === 4) { const a = verleihe("der-alte"); if (a) this.neueAbzeichen.push(a); }
     this.status(`${geber === 0 ? "Du gibst" : `${NAMEN[geber]} gibt`}. Du bist ${this.rolle(0)}.`);
     if (this.voll) this.hilfe(this.rolle(0) === "Vorhand" ? "Als <b>Vorhand</b> hörst du beim Reizen und spielst die erste Karte aus." : this.rolle(0) === "Mittelhand" ? "Als <b>Mittelhand</b> beginnst du das Reizen: Du sagst der Vorhand Werte an." : "Als <b>Hinterhand</b> (Geber) reizt du zuletzt – gegen den, der übrig bleibt.");
     if (!(await this.pause(1800))) return null;
@@ -567,6 +595,8 @@ export class SkatSpiel {
           sageAn(sp, a, rz.wert, d.spiel);
         }
         this.status(`${NAMEN[a]} spielt ${spielName(sp.spiel, BLATT)}.`);
+        this.sagt(a, `${spielName(sp.spiel, BLATT)}!`, { klasse: "laut", ms: 2600 });
+        this.laune(a, "stolz");
         if (this.voll) {
           const partner = NAMEN[a === 1 ? 2 : 1];
           const trumpf = sp.spiel.art === "null" ? "Es gibt <b>keinen Trumpf</b>; Reihenfolge A K D B 10 9 8 7. Ihr müsst versuchen, ihm einen Stich aufzuzwingen." : sp.spiel.art === "grand" ? "Trumpf sind <b>nur die vier Buben</b>." : `Trumpf sind die <b>Buben und alle ${farbNameSkat(sp.spiel.trumpf, BLATT)}-Karten</b>.`;
@@ -653,6 +683,39 @@ export class SkatSpiel {
     eintrag.datum = new Date().toISOString().slice(0, 10);
     this.liste.push(eintrag);
     this.aufAenderung(this.liste);
+    // Spaß: Erfahrung, Abzeichen, Stimmung
+    const spiele = zaehle("spiele");
+    let xp = 20, freude = false;
+    const neu = [];
+    const merk = (id) => { const a = verleihe(id); if (a) neu.push(a); };
+    merk("erstes-spiel");
+    if (spiele >= 20) merk("stammgast");
+    if (!e.ramsch) {
+      const a = e.alleinspieler;
+      if (a === 0 && e.gewonnen) {
+        xp += e.wert; freude = true;
+        merk("erster-sieg");
+        if (e.schneider && sp.spiel.art !== "null") merk("schneider");
+        if (sp.spiel.art === "grand") merk("grand");
+        if (sp.spiel.art === "null") merk("null");
+        if (sp.spiel.hand) merk("hand");
+        [1, 2].forEach((q) => { this.laune(q, "sauer"); });
+        this.sagt(1, spruch("gegnerVerloren"), { ms: 3000 }); this.sagt(2, spruch("gegnerVerloren"), { ms: 3000 });
+      } else if (a !== 0 && !e.gewonnen) {
+        xp += 30; freude = true;
+        if (zaehle("verteidigt") >= 5) merk("verteidiger");
+        this.laune(a, "sauer"); this.laune(a === 1 ? 2 : 1, "froh");
+        this.sagt(a, spruch("spielVerloren"), { ms: 3000 });
+      } else if (a !== 0 && e.gewonnen) {
+        this.laune(a, "stolz"); this.sagt(a, spruch("spielGewonnen"), { ms: 3000 });
+      } else {
+        [1, 2].forEach((q) => this.laune(q, "froh"));
+      }
+    }
+    if (freude) { klang.sieg(); konfetti(); } else klang.niederlage();
+    const erg = gibXp(xp, "Spiel");
+    neu.push(...this.neueAbzeichen); this.neueAbzeichen = [];
+    box.append(h("p.hinweis", { text: `+${xp + neu.length * 50} Erfahrung${neu.length ? ` · ${neu.length === 1 ? "neues Abzeichen" : `${neu.length} neue Abzeichen`}: ${neu.map((x) => x.icon + " " + x.name).join(", ")}` : ""}` }));
     const summe = [0, 0, 0];
     for (const z of this.liste) z.punkte.forEach((x, i) => (summe[i] += x));
     box.append(h("p.hinweis", { text: `Liste nach ${this.liste.length} Spiel${this.liste.length > 1 ? "en" : ""}: Du ${summe[0]} · Lena ${summe[1]} · Max ${summe[2]}` }));

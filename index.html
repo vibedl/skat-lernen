@@ -5,19 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Skat lernen</title>
   <meta name="description" content="Skat lernen – Regeln Schritt für Schritt, Übungen und Spielen gegen zwei Computer, mit Erklärungen zu jedem Zug.">
-  <meta name="theme-color" content="#14201a">
+  <meta name="theme-color" content="#5a3a1e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Skat lernen">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Nunito:wght@600;700;800&family=Caveat:wght@600;700&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app">
     <header class="kopf">
       <h1 class="kopf-titel">Skat lernen</h1>
+      <button class="rangplakette" id="rangplakette" type="button" aria-label="Dein Rang und deine Abzeichen"></button>
       <button class="kopf-knopf" id="einstellungen-knopf" type="button" aria-label="Einstellungen">⚙︎</button>
     </header>
     <main id="inhalt" class="inhalt" aria-live="polite"></main>
@@ -25,7 +29,7 @@
       <button type="button" data-tab="lernen"><span class="tab-icon">📖</span>Lernen</button>
       <button type="button" data-tab="ueben"><span class="tab-icon">✏️</span>Üben</button>
       <button type="button" data-tab="spielen"><span class="tab-icon">🃏</span>Spielen</button>
-      <button type="button" data-tab="liste"><span class="tab-icon">📋</span>Liste</button>
+      <button type="button" data-tab="liste"><span class="tab-icon">🏆</span>Erfolge</button>
     </nav>
   </div>
   <noscript><p style="padding:2rem;color:#fff">Diese App braucht JavaScript.</p></noscript>
